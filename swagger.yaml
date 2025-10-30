@@ -15,10 +15,6 @@ info:
 servers:
   - url: https://api.example.com
     description: Production server
-	servlet:
-	   encoding:
-		force-response: true
-		charset: UTF-8
 
 # Security sémák - API key alapú autentikáció
 security:
@@ -48,7 +44,7 @@ components:
           description: NGSI-LD property típus azonosító
         value:
           # A Property value alapértelmezett típusa nincs megadva, ami rugalmasságot biztosít.
-          # A konkrét típusokat az allOf részekben adjuk meg.
+          # A konkrét típusokat az allOf részekben adjuk meg, vagy közvetlenül.
           description: A property tényleges értéke (lehet string, number, array, stb.)
 
     # NGSI-LD GeoProperty típus - földrajzi koordináták
@@ -93,7 +89,7 @@ components:
           enum: [Relationship]
           description: NGSI-LD relationship típus azonosító
         object:
-          type: string # Ezt adtam hozzá
+          type: string
           description: Kapcsolódó entitás URN azonosítója vagy üres string
           example: "urn:ngsi-ld:Road:MainRoad01"
 
@@ -159,7 +155,7 @@ components:
                   description: Eszköz tulajdonos(ok) listája
                   items:
                     type: string
-                  example: ["urn:ngsi-ld:Organization:szeged-city"] # Példa pontosítása
+                  example: ["urn:ngsi-ld:Organization:szeged-city"]
         location:
           $ref: '#/components/schemas/GeoProperty'
 
@@ -276,7 +272,7 @@ components:
             - $ref: '#/components/schemas/Property'
             - type: object
               properties:
-                value: # Ezen belül a GeoJSON definíciója
+                value:
                   type: object
                   required:
                     - type
@@ -299,7 +295,7 @@ components:
             - $ref: '#/components/schemas/Property'
             - type: object
               properties:
-                value: # Ezen belül a GeoJSON definíciója
+                value:
                   type: object
                   required:
                     - type
@@ -373,7 +369,7 @@ components:
           enum: [Property]
           description: NGSI-LD property típus azonosító
         value:
-          type: string # Ezt adtam hozzá (vagy egyéb típus, ha specifikusabb)
+          type: string
           description: A property tényleges értéke
         observedAt:
           type: string
@@ -382,7 +378,7 @@ components:
           example: "2025-10-28T10:30:00Z"
 
     # Property with intensity - mértékegységgel rendelkező property
-    PropertyWithIntensity: # Javított név: Intensity
+    PropertyWithIntensity:
       type: object
       required:
         - type
@@ -394,7 +390,7 @@ components:
           description: NGSI-LD property típus azonosító
         value:
           description: A property tényleges értéke (numerikus)
-          type: number # Ezt adtam hozzá
+          type: number
 
     # TrafficFlowObserved entitás - közlekedési forgalom megfigyelés
     TrafficFlowObserved:
@@ -433,7 +429,7 @@ components:
                   example: "2025-10-28T10:00:00Z"
         intensity:
           allOf:
-            - $ref: '#/components/schemas/PropertyWithIntensity' # Javított hivatkozás
+            - $ref: '#/components/schemas/PropertyWithIntensity'
             - type: object
               properties:
                 value:
@@ -504,12 +500,8 @@ paths:
       operationId: getOrganizations
       tags:
         - Organizations
-
-      # Security követelmény
       security:
         - apiKey: []
-
-      # Válaszok
       responses:
         '200':
           description: |
@@ -521,7 +513,6 @@ paths:
                 type: array
                 items:
                   $ref: '#/components/schemas/Organization'
-              # Példa válasz - Magyar önkormányzatok
               example:
                 - "@context": "https://smartdatamodels.org/context.jsonld"
                   id: "urn:ngsi-ld:Organization:municipality-szeged"
@@ -541,7 +532,6 @@ paths:
                   name:
                     type: "Property"
                     value: "Debrecen Önkormányzat"
-
         '401':
           description: |
             Unauthorized - hiányzó vagy érvénytelen API kulcs.
@@ -554,7 +544,6 @@ paths:
                 error: "Unauthorized"
                 message: "Invalid or missing API key"
                 timestamp: "2025-10-28T10:30:00Z"
-
         '500':
           description: Belső szerverhiba - váratlan hiba történt a feldolgozás során
           content:
@@ -573,12 +562,9 @@ paths:
       description: |
         Visszaadja a megadott organization-höz (önkormányzathoz) tartozó összes szenzor eszközt Device-okból álló tömb formátumban.
         A válasz FIWARE Device smart data modell szerint strukturált, NGSI-LD kompatibilis formátumban.
-
       operationId: getDevicesByTenant
       tags:
         - Devices
-
-      # Path paraméter
       parameters:
         - name: organizationId
           in: path
@@ -587,12 +573,8 @@ paths:
           schema:
             type: string
           example: "szeged-city"
-
-      # Security követelmény (örökli a globál security-t, de explicit jelzésként)
       security:
         - apiKey: []
-
-      # Válaszok
       responses:
         '200':
           description: |
@@ -604,7 +586,6 @@ paths:
                 type: array
                 items:
                   $ref: '#/components/schemas/Device'
-              # Példa válasz - Szegedi szenzorok
               example:
                 - "@context": "https://smartdatamodels.org/context.jsonld"
                   id: "urn:ngsi-ld:Device:SZG001"
@@ -646,31 +627,8 @@ paths:
                     value:
                       type: "Point"
                       coordinates: [20.1421, 46.2467]
-                - "@context": "https://smartdatamodels.org/context.jsonld"
-                  id: "urn:ngsi-ld:Device:SZG003"
-                  type: "Device"
-                  deviceCategory:
-                    type: "Property"
-                    value: ["sensor"]
-                  name:
-                    type: "Property"
-                    value: "Szeged Önkormányzat - Bertalan híd szenzor"
-                  controlledProperty:
-                    type: "Property"
-                    value: ["trafficFlow"]
-                  owner:
-                    type: "Property"
-                    value: ["urn:ngsi-ld:Organization:szeged-city"]
-                  location:
-                    type: "GeoProperty"
-                    value:
-                      type: "Point"
-                      coordinates: [20.1523, 46.2445]
-
         '401':
-          description: |
-            Unauthorized - hiányzó vagy érvénytelen API kulcs.
-            Ellenőrizd, hogy az 'api-key' header megfelelően van-e küldve.
+          description: Unauthorized - hiányzó vagy érvénytelen API kulcs.
           content:
             application/json:
               schema:
@@ -679,7 +637,6 @@ paths:
                 error: "Unauthorized"
                 message: "Invalid or missing API key"
                 timestamp: "2025-10-28T10:30:00Z"
-
         '404':
           description: |
             Not Found - a megadott organization nem található a rendszerben.
@@ -692,16 +649,15 @@ paths:
                 error: "NotFound"
                 message: "organization 'szeged-city' not found"
                 timestamp: "2025-10-28T10:30:00Z"
-
         '500':
-          description: Belső szerverhiba - váratlan hiba történt a feldolgozás során
+          description: Belső szerverhiba
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
               example:
                 error: "InternalServerError"
-                message: "An unexpected error occurred while processing the request"
+                message: "An unexpected error occurred"
                 timestamp: "2025-10-28T10:30:00Z"
 
   # Endpoint 2: Anonimizált utazó azonosítók lekérdezése organization szerint
@@ -711,13 +667,9 @@ paths:
       description: |
         Visszaadja a megadott organization-höz tartozó anonimizált utazó azonosítókat (track-eket) tömb formátumban.
         A válasz FIWARE AnonymousCommuterId smart data modell szerint strukturált, NGSI-LD kompatibilis formátumban.
-        Minden track tartalmazza a kiindulási és cél irányt, valamint a szenzor lokáció koordinátáit.
-
       operationId: getAnonymousCommuterIdsByTenant
       tags:
         - AnonymousCommuterIds
-
-      # Path paraméter
       parameters:
         - name: organizationId
           in: path
@@ -726,24 +678,17 @@ paths:
           schema:
             type: string
           example: "szeged-city"
-
-      # Security követelmény
       security:
         - apiKey: []
-
-      # Válaszok
       responses:
         '200':
-          description: |
-            Sikeres lekérdezés - visszaadja a organization anonimizált utazó azonosítóit array formátumban.
-            Minden track tartalmazza a saját @context-jét, orig (kiindulás), dest (cél) irányokat és a lokációt.
+          description: Sikeres lekérdezés
           content:
             application/json:
               schema:
                 type: array
                 items:
                   $ref: '#/components/schemas/AnonymousCommuterId'
-              # Példa válasz - Szegedi track-ek
               example:
                 - "@context": "https://smartdatamodels.org/context.jsonld"
                   id: "urn:ngsi-ld:AnonymousCommuterId:TRACK001"
@@ -762,81 +707,206 @@ paths:
                     value:
                       type: "Point"
                       coordinates: [20.1486, 46.2530]
-                - "@context": "https://smartdatamodels.org/context.jsonld"
-                  id: "urn:ngsi-ld:AnonymousCommuterId:TRACK002"
-                  type: "AnonymousCommuterId"
-                  anonymizedId:
-                    type: "Property"
-                    value: "TRACK002"
-                  orig:
-                    type: "Property"
-                    value: "Fecske út"
-                  dest:
-                    type: "Property"
-                    value: "Szabadság tér"
-                  location:
-                    type: "GeoProperty"
-                    value:
-                      type: "Point"
-                      coordinates: [20.1421, 46.2467]
-                - "@context": "https://smartdatamodels.org/context.jsonld"
-                  id: "urn:ngsi-ld:AnonymousCommuterId:TRACK003"
-                  type: "AnonymousCommuterId"
-                  anonymizedId:
-                    type: "Property"
-                    value: "TRACK003"
-                  orig:
-                    type: "Property"
-                    value: "Szabadság tér"
-                  dest:
-                    type: "Property"
-                    value: "József Attila út"
-                  location:
-                    type: "GeoProperty"
-                    value:
-                      type: "Point"
-                      coordinates: [20.1523, 46.2445]
-
         '401':
-          description: |
-            Unauthorized - hiányzó vagy érvénytelen API kulcs.
-            Ellenőrizd, hogy az 'api-key' header megfelelően van-e küldve.
+          description: Unauthorized
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
-              example:
-                error: "Unauthorized"
-                message: "Invalid or missing API key"
-                timestamp: "2025-10-28T10:30:00Z"
-
         '404':
-          description: |
-            Not Found - a megadott organization nem található a rendszerben.
-            Ellenőrizd a organizationId paraméter helyességét.
+          description: Not Found
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
-              example:
-                error: "NotFound"
-                message: "organization 'szeged-city' not found"
-                timestamp: "2025-10-28T10:30:00Z"
-
         '500':
-          description: Belső szerverhiba - váratlan hiba történt a feldolgozás során
+          description: Belső szerverhiba
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
-              example:
-                error: "InternalServerError"
-                message: "An unexpected error occurred while processing the request"
-                timestamp: "2025-10-28T10:30:00Z"
 
   # Endpoint 3: Útszakaszok (RoadSegment) lekérdezése device szerint
-  /api/v1/organizations/{organizationId}/device/{deviceId}/roadSegments: # Javított URL: roadSegments
+  /api/v1/organizations/{organizationId}/devices/{deviceId}/roadSegments:
     get:
       summary: Útszakaszok lekérdezése eszköz szerint
       description: |
-        Visszaadja a megadott organization-höz és eszközhöz (device) tartozó útszakaszokat tömb formátumb
+        Visszaadja a megadott organization-höz és eszközhöz (device) tartozó útszakaszokat tömb formátumban.
+        A válasz FIWARE RoadSegment smart data modell szerint strukturált.
+      operationId: getRoadSegmentsByDevice
+      tags:
+        - RoadSegments
+      parameters:
+        - name: organizationId
+          in: path
+          required: true
+          description: organization (bérlő) egyedi azonosítója
+          schema:
+            type: string
+          example: "szeged-city"
+        - name: deviceId
+          in: path
+          required: true
+          description: Device (eszköz/szenzor) egyedi azonosítója
+          schema:
+            type: string
+          example: "SZG001"
+      security:
+        - apiKey: []
+      responses:
+        '200':
+          description: Sikeres lekérdezés
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/RoadSegment'
+              example:
+                - "@context":
+                    - "https://smartdatamodels.org/context.jsonld"
+                    - "https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-context.jsonld"
+                  id: "urn:ngsi-ld:RoadSegment:1"
+                  type: "RoadSegment"
+                  name:
+                    type: "Property"
+                    value: "North Direction"
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Not Found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Belső szerverhiba
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  # Endpoint 4: Forgalom megfigyelések (TrafficFlowObserved) lekérdezése device szerint
+  /api/v1/organizations/{organizationId}/devices/{deviceId}/trafficFlowObserved:
+    get:
+      summary: Forgalom megfigyelések lekérdezése eszköz szerint
+      description: |
+        Visszaadja a megadott organization-höz és eszközhöz tartozó forgalmi megfigyeléseket tömb formátumban.
+        **Szűrési feltételek:**
+        - **Kötelező dátum szűrés**: dateFrom és dateTo query paraméterek ISO 8601 formátumban
+        - **Maximum időintervallum**: 72 óra (3 nap)
+      operationId: getTrafficFlowObservedByDevice
+      tags:
+        - TrafficFlowObserved
+      parameters:
+        - name: organizationId
+          in: path
+          required: true
+          description: organization (bérlő) egyedi azonosítója
+          schema:
+            type: string
+          example: "szeged-city"
+        - name: deviceId
+          in: path
+          required: true
+          description: Device (eszköz/szenzor) egyedi azonosítója
+          schema:
+            type: string
+          example: "SZG001"
+        - name: dateFrom
+          in: query
+          required: true
+          description: Szűrés kezdő dátuma és időpontja ISO 8601 formátumban (UTC).
+          schema:
+            type: string
+            format: date-time
+          example: "2025-10-28T00:00:00Z"
+        - name: dateTo
+          in: query
+          required: true
+          description: Szűrés záró dátuma és időpontja ISO 8601 formátumban (UTC).
+          schema:
+            type: string
+            format: date-time
+          example: "2025-10-30T23:59:59Z"
+      security:
+        - apiKey: []
+      responses:
+        '200':
+          description: Sikeres lekérdezés
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/TrafficFlowObserved'
+              example:
+                - "@context": "https://smartdatamodels.org/context.jsonld"
+                  id: "urn:ngsi-ld:TrafficFlowObserved:12345_TRACK001"
+                  type: "TrafficFlowObserved"
+                  dateObserved:
+                    type: "Property"
+                    value: "2025-10-28T10:00:00Z/2025-10-28T10:15:00Z"
+                    observedAt: "2025-10-28T10:00:00Z"
+                  intensity:
+                    type: "Property"
+                    value: 45
+                  seeAlso:
+                    type: "Relationship"
+                    object: "urn:ngsi-ld:AnonymousCommuterId:TRACK001"
+                  vehicleType:
+                    type: "Property"
+                    value: "car"
+                  refDevice:
+                    type: "Relationship"
+                    object: "urn:ngsi-ld:Device:SZG001"
+        '400':
+          description: |
+            Bad Request - hibás kérés paraméterezés.
+            Lehetséges okok:
+            - A dateFrom és dateTo közötti időintervallum meghaladja a 72 órát.
+            - Hiányzó kötelező query paraméterek.
+            - Érvénytelen dátum formátum.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                error: "BadRequest"
+                message: "Time interval exceeds maximum allowed 72 hours."
+                timestamp: "2025-10-28T10:30:00Z"
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Not Found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Belső szerverhiba
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+# API kategóriák (tagek)
+tags:
+  - name: Organizations
+    description: Szervezetek (önkormányzatok) kezelése - FIWARE Organization smart data modell alapján
+  - name: Devices
+    description: Eszközök (szenzorok) kezelése - FIWARE Device smart data modell alapján
+  - name: AnonymousCommuterIds
+    description: Anonimizált utazó azonosítók (track-ek) kezelése - FIWARE AnonymousCommuterId smart data modell alapján
+  - name: RoadSegments
+    description: Útszakaszok kezelése - FIWARE RoadSegment smart data modell alapján
+  - name: TrafficFlowObserved
+    description: Forgalmi megfigyelések kezelése - FIWARE TrafficFlowObserved smart data modell alapján
