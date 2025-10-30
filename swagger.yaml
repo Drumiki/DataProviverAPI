@@ -15,6 +15,10 @@ info:
 servers:
   - url: https://api.example.com
     description: Production server
+	servlet:
+	   encoding:
+		force-response: true
+		charset: UTF-8
 
 # Security sémák - API key alapú autentikáció
 security:
